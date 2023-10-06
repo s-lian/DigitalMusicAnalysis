@@ -16,6 +16,7 @@ namespace DigitalMusicAnalysis
             Complex i = Complex.ImaginaryOne;
             this.wSamp = windowSamp;
             twiddles = new Complex[wSamp];
+
             for (ii = 0; ii < wSamp; ii++)
             {
                 double a = 2 * pi * ii / (double)wSamp;
