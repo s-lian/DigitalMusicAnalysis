@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Diagnostics; // The namespace for the Stopwatch class
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -33,20 +34,49 @@ namespace DigitalMusicAnalysis
         public MainWindow()
         {
             InitializeComponent();
+
+            Stopwatch totaTime = new Stopwatch();
+            Stopwatch freqDomainTime = new Stopwatch();
+            Stopwatch onsetDectionTime = new Stopwatch();
+
+
             filename = openFile("Select Audio (wav) file");
             string xmlfile = openFile("Select Score (xml) file");
             Thread check = new Thread(new ThreadStart(updateSlider));
+
+
+            totaTime.Start();
             loadWave(filename);
+
+            freqDomainTime.Start();
             freqDomain(); // do the heavy lifting 
+            freqDomainTime.Stop();
+
             sheetmusic = readXML(xmlfile);
+
+            onsetDectionTime.Start();
             onsetDetection();
+            onsetDectionTime.Stop();
+
+
             loadImage();
             loadHistogram();
+
             playBack();
             check.Start();
+            totaTime.Stop();
 
+            string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark.txt";
+            string seconds = $"toalTime in secods: {totaTime.Elapsed.TotalSeconds},freqDomain time in seconds: {freqDomainTime.Elapsed.TotalSeconds},onsetDetectiontime in seconds: {onsetDectionTime.Elapsed.TotalSeconds}\n ";
+            string milliseconds = $"toalTime in milliseconds: {totaTime.ElapsedMilliseconds},freqDomain time in milliseconds: {freqDomainTime.ElapsedMilliseconds},onsetDetectiontime in milliseconds: {onsetDectionTime.ElapsedMilliseconds}\n ";
 
-            System.Console.Out.WriteLine("Hello World!");
+            using (StreamWriter sw = File.AppendText(benchmarkFile)) //records bench mark specs
+            {
+                sw.WriteLine(seconds);
+                sw.WriteLine(milliseconds);
+            }
+
+            Debug.WriteLine($"total Time: {totaTime.ElapsedMilliseconds} ms \nFreqDomain Time: {freqDomainTime.ElapsedMilliseconds} ms\nonsetDetection Time: {onsetDectionTime.ElapsedMilliseconds} ms");
 
             button1.Click += zoomIN;
             button2.Click += zoomOUT;
