@@ -64,9 +64,10 @@ namespace DigitalMusicAnalysis
 
             playBack();
             check.Start();
+          
             totaTime.Stop();
 
-            string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark.txt";
+            string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark3.txt";
             string seconds = $"toalTime in secods: {totaTime.Elapsed.TotalSeconds},freqDomain time in seconds: {freqDomainTime.Elapsed.TotalSeconds},onsetDetectiontime in seconds: {onsetDectionTime.Elapsed.TotalSeconds}\n ";
             string milliseconds = $"toalTime in milliseconds: {totaTime.ElapsedMilliseconds},freqDomain time in milliseconds: {freqDomainTime.ElapsedMilliseconds},onsetDetectiontime in milliseconds: {onsetDectionTime.ElapsedMilliseconds}\n ";
 
