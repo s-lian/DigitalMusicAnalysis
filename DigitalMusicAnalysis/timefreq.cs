@@ -122,10 +122,13 @@ namespace DigitalMusicAnalysis
 
         // Create an array to store the STFT results
         float[][] Y = new float[wSamp / 2][];
-        for (int ll = 0; ll < wSamp / 2; ll++)
-        {
-            Y[ll] = new float[2 * (int)Math.Floor((double)N / (double)wSamp)];
-        }
+
+            Parallel.For(0, wSamp / 2, ll =>
+            {
+                Y[ll] = new float[2 * (int)Math.Floor((double)N / (double)wSamp)];
+
+            });
+        
 
         // Parallelize the processing of different sections of the input data
         Parallel.For(0, 2 * (int)Math.Floor((double)N / (double)wSamp) - 1, ii =>
