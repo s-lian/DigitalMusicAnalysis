@@ -398,7 +398,7 @@ namespace DigitalMusicAnalysis
 
 
 
-            double[] globalPitchArray = new double[lengths.Count];
+            double[] globalPitch = new double[lengths.Count];
             Parallel.For(0, lengths.Count, mm =>
             {
                 int nearest = (int)Math.Pow(2, Math.Ceiling(Math.Log(lengths[mm], 2)));
@@ -462,15 +462,15 @@ namespace DigitalMusicAnalysis
 
                 if (maxInd > nearest / 2)
                 {
-                    globalPitchArray[mm] = (nearest - maxInd) * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
+                    globalPitch[mm] = (nearest - maxInd) * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
                 }
                 else
                 {
-                    globalPitchArray[mm] = maxInd * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
+                    globalPitch[mm] = maxInd * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
                 }
             });
 
-            pitches.AddRange(globalPitchArray); // add the pitches back together
+            pitches.AddRange(globalPitch); // add the pitches back together
 
             /*for (int mm = 0; mm < lengths.Count; mm++)
             {
@@ -874,7 +874,7 @@ namespace DigitalMusicAnalysis
 
                 for (kk = 0; kk < N; kk++)
                 {
-                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)]; // reference local twiddles array now, not the global one since now being ran in parallel
+                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)]; // reference to local twiddles array now, since now being ran in parallel
                 }
             }
 
