@@ -12,6 +12,7 @@ using System.Threading;
 using System.Numerics;
 using NAudio.Wave;
 using System.Xml;
+using System.Threading.Tasks;
 
 namespace DigitalMusicAnalysis
 {
@@ -30,6 +31,7 @@ namespace DigitalMusicAnalysis
         private string filename;
         private enum pitchConv { C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B };
         private double bpm = 70;
+        public static int mainFFTCalls = 0;
 
         public MainWindow()
         {
@@ -388,12 +390,89 @@ namespace DigitalMusicAnalysis
 
             ///*
 
+
             for (int ii = 0; ii < noteStops.Count; ii++)
             {
                 lengths.Add(noteStops[ii] - noteStarts[ii]);
             }
 
-            for (int mm = 0; mm < lengths.Count; mm++)
+
+
+            double[] globalPitchArray = new double[lengths.Count];
+            Parallel.For(0, lengths.Count, mm =>
+            {
+                int nearest = (int)Math.Pow(2, Math.Ceiling(Math.Log(lengths[mm], 2)));
+                Complex[] twiddles = new Complex[nearest]; // need to initialise for each Parallel.For loop
+                for (int ll = 0; ll < nearest; ll++)
+                {
+                    double a = 2 * pi * ll / (double)nearest;
+                    twiddles[ll] = Complex.Pow(Complex.Exp(-i), (float)a);
+                }
+
+                Complex[] compX = new Complex[nearest];
+                for (int kk = 0; kk < nearest; kk++)
+                {
+                    if (kk < lengths[mm] && (noteStarts[mm] + kk) < waveIn.wave.Length)
+                    {
+                        compX[kk] = waveIn.wave[noteStarts[mm] + kk];
+                    }
+                    else
+                    {
+                        compX[kk] = Complex.Zero;
+                    }
+                }
+
+                Complex[] Y = new Complex[nearest];
+
+                Y = fft(compX, nearest, twiddles);
+
+                double[] absY = new double[nearest];
+
+                double maximum = 0;
+
+                int maxInd = 0;
+
+                for (int jj = 0; jj < Y.Length; jj++)
+                {
+                    absY[jj] = Y[jj].Magnitude;
+                    if (absY[jj] > maximum)
+                    {
+                        maximum = absY[jj];
+                        maxInd = jj;
+                    }
+                }
+                for (int div = 6; div > 1; div--)
+                {
+
+                    if (maxInd > nearest / 2)
+                    {
+                        if (absY[(int)Math.Floor((double)(nearest - maxInd) / div)] / absY[(maxInd)] > 0.10)
+                        {
+                            maxInd = (nearest - maxInd) / div;
+                        }
+                    }
+                    else
+                    {
+                        if (absY[(int)Math.Floor((double)maxInd / div)] / absY[(maxInd)] > 0.10)
+                        {
+                            maxInd = maxInd / div;
+                        }
+                    }
+                }
+
+                if (maxInd > nearest / 2)
+                {
+                    globalPitchArray[mm] = (nearest - maxInd) * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
+                }
+                else
+                {
+                    globalPitchArray[mm] = maxInd * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
+                }
+            });
+
+            pitches.AddRange(globalPitchArray); // add the pitches back together
+
+            /*for (int mm = 0; mm < lengths.Count; mm++)
             {
                 int nearest = (int)Math.Pow(2, Math.Ceiling(Math.Log(lengths[mm], 2)));
                 twiddles = new Complex[nearest];
@@ -464,7 +543,7 @@ namespace DigitalMusicAnalysis
                 }
 
 
-            }
+            }*/
 
             musicNote[] noteArray;
             noteArray = new musicNote[noteStarts.Count()];
@@ -755,11 +834,13 @@ namespace DigitalMusicAnalysis
 
         // FFT function for Pitch Detection
 
-        private Complex[] fft(Complex[] x, int L)
+        private Complex[] fft(Complex[] x, int L, Complex[] twiddles)
         {
             int ii = 0;
             int kk = 0;
             int N = x.Length;
+
+           // mainFFTCalls++;
 
             Complex[] Y = new Complex[N];
 
@@ -788,12 +869,12 @@ namespace DigitalMusicAnalysis
                     }
                 }
 
-                E = fft(even, L);
-                O = fft(odd, L);
+                E = fft(even, L, twiddles);
+                O = fft(odd, L, twiddles);
 
                 for (kk = 0; kk < N; kk++)
                 {
-                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)];
+                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)]; // reference local twiddles array now, not the global one since now being ran in parallel
                 }
             }
 
