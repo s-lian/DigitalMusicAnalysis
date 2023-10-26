@@ -31,7 +31,8 @@ namespace DigitalMusicAnalysis
         private string filename;
         private enum pitchConv { C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B };
         private double bpm = 70;
-        public static int mainFFTCalls = 0;
+        public int NUM_OF_PROCESSOR = Environment.ProcessorCount;
+
 
         public MainWindow()
         {
@@ -66,7 +67,7 @@ namespace DigitalMusicAnalysis
 
             playBack();
             check.Start();
-          
+
             totaTime.Stop();
 
             string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark3.txt";
@@ -730,8 +731,21 @@ namespace DigitalMusicAnalysis
                 noteStaff.Children.Insert(ii, timeRect[ii]);
             }
 
+            // write the noteArray to a text file to compare with sequential code
 
+
+
+            using (TextWriter sw = new StreamWriter(@"C:\Users\steph\Documents\CAB401\DigitalMusicAnalysis\DigitalMusicAnalysis\ParallleOutput.txt")) //records bench mark specs
+            {
+
+                foreach (var line in alignedNoteArray)
+                {
+                    sw.WriteLine(line.Output());
+                }
+
+            }
         }
+
 
         private void DisplayStats(object sender, System.Windows.Input.MouseEventArgs e)
         {
@@ -840,7 +854,7 @@ namespace DigitalMusicAnalysis
             int kk = 0;
             int N = x.Length;
 
-           // mainFFTCalls++;
+            // mainFFTCalls++;
 
             Complex[] Y = new Complex[N];
 

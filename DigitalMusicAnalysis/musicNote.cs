@@ -89,6 +89,12 @@ namespace DigitalMusicAnalysis
                     break;
             }
         }
+
+        public String Output()
+        {
+            String output = pitch.ToString() + ", " + duration.ToString() + ", " + flat.ToString() + ", " + error.ToString() + ", " + staffPos.ToString() + ", " + mult.ToString() + ", " + frequency.ToString();
+            return output;
+        }
     }
 
     

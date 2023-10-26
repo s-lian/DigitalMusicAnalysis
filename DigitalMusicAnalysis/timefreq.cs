@@ -22,50 +22,17 @@ namespace DigitalMusicAnalysis
             this.wSamp = windowSamp;
             twiddles = new Complex[wSamp];
 
-
-            Stopwatch basicParallelStopTime = new Stopwatch();
-
-             basicParallelStopTime.Start();
-            Parallel.For(0, wSamp, ii =>
-            {
-                double a = 2 * pi * ii / (double)wSamp;
-                twiddles[ii] = Complex.Pow(Complex.Exp(-i), (float)a);
-
-            });
-
-             basicParallelStopTime.Stop();
-             string exapmpestring = $"exmaple time in milliseconds {basicParallelStopTime.ElapsedMilliseconds}\n ";
-             Debug.WriteLine(exapmpestring);
-            //-------------------------------------------------------------------------------------------------------------//
-
-
-            // using MaxDegreeofParallelism
-
-            /*  Stopwatch useMaxDegreeOfParallelism = new Stopwatch();
-             useMaxDegreeOfParallelism.Start();
-             Parallel.For(0, wSamp, new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, ii =>
-             {
-                 double a = 2 * pi * ii / (double)wSamp;
-                 twiddles[ii] = Complex.Pow(Complex.Exp(-i), (float)a);
-
-             });
-             useMaxDegreeOfParallelism.Stop();
-             string exapmpestring = $"exmaple time in milliseconds {useMaxDegreeOfParallelism.ElapsedMilliseconds}\n ";
-             Debug.WriteLine(exapmpestring);*/
-            //-------------------------------------------------------------------------------------------------------------//
-
-
             //sequentil version 
-            /*Stopwatch sequentialVersion = new Stopwatch();
+            Stopwatch sequentialVersion = new Stopwatch();
             sequentialVersion.Start();
-             for (ii = 0; ii < wSamp; ii++)
+            for (ii = 0; ii < wSamp; ii++)
             {
                 double a = 2 * pi * ii / (double)wSamp;
                 twiddles[ii] = Complex.Pow(Complex.Exp(-i), (float)a);
             }
             sequentialVersion.Stop();
             string sequentialTimeLog = $"exmaple time in milliseconds {sequentialVersion.ElapsedMilliseconds}\n ";
-            Debug.WriteLine(sequentialTimeLog);*/
+            Debug.WriteLine(sequentialTimeLog);
             //-------------------------------------------------------------------------------------------------------------//
 
 
@@ -115,14 +82,17 @@ namespace DigitalMusicAnalysis
         float[][] stft(Complex[] x, int wSamp)
         {
 
-            
-        int N = x.Length;
-        float fftMax = 0;
 
-        // Create an array to store the STFT results
-        float[][] Y = new float[wSamp / 2][];
+            int N = x.Length;
+            float fftMax = 0;
 
-            for ( int ll = 0; ll < wSamp / 2; ll++)
+            // Create an array to store the STFT results
+            float[][] Y = new float[wSamp / 2][];
+
+
+
+
+            for (int ll = 0; ll < wSamp / 2; ll++)
             {
                 Y[ll] = new float[2 * (int)Math.Floor((double)N / (double)wSamp)];
             }
@@ -162,7 +132,7 @@ namespace DigitalMusicAnalysis
         });
 
             // Normalize the results after all processing is complete
-            Parallel.For(0, 2 * (int) Math.Floor((double)N / (double)wSamp) - 1 , new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, ii =>
+            Parallel.For(0, 2 * (int)Math.Floor((double)N / (double)wSamp) - 1, new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, ii =>
         {
             for (int kk = 0; kk < wSamp / 2; kk++)
             {
@@ -170,13 +140,8 @@ namespace DigitalMusicAnalysis
             }
         });
 
-        return Y;
-    }
-            
-
-            
-
-
+            return Y;
+        }
 
         Complex[] fft(Complex[] x)
         {
