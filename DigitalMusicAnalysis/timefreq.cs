@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using NAudio.Utils;
-
 namespace DigitalMusicAnalysis
 {
     public class timefreq
@@ -123,15 +122,13 @@ namespace DigitalMusicAnalysis
         // Create an array to store the STFT results
         float[][] Y = new float[wSamp / 2][];
 
-            Parallel.For(0, wSamp / 2, ll =>
+            for ( int ll = 0; ll < wSamp / 2; ll++)
             {
                 Y[ll] = new float[2 * (int)Math.Floor((double)N / (double)wSamp)];
+            }
 
-            });
-        
-
-        // Parallelize the processing of different sections of the input data
-        Parallel.For(0, 2 * (int)Math.Floor((double)N / (double)wSamp) - 1, ii =>
+            // Parallelize the processing of different sections of the input data
+            Parallel.For(0, 2 * (int)Math.Floor((double)N / (double)wSamp) - 1, new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, ii =>
         {
             Complex[] temp = new Complex[wSamp];
             Complex[] tempFFT = new Complex[wSamp];
@@ -164,8 +161,8 @@ namespace DigitalMusicAnalysis
             }
         });
 
-        // Normalize the results after all processing is complete
-        Parallel.For(0, 2 * (int) Math.Floor((double)N / (double)wSamp) - 1, ii =>
+            // Normalize the results after all processing is complete
+            Parallel.For(0, 2 * (int) Math.Floor((double)N / (double)wSamp) - 1 , new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, ii =>
         {
             for (int kk = 0; kk < wSamp / 2; kk++)
             {
@@ -177,62 +174,7 @@ namespace DigitalMusicAnalysis
     }
             
 
-            // sequential version 
-
-            /*int ii = 0;
-            int jj = 0;
-            int kk = 0;
-
-            int N = x.Length;
-            float fftMax = 0;
-
-            // Create an array to store the STFT results
-            float[][] Y = new float[wSamp / 2][];
-
-            for (int ll = 0; ll < wSamp / 2; ll++)
-            {
-                Y[ll] = new float[2 * (int)Math.Floor((double)N / (double)wSamp)];
-            }
-
-            Complex[] temp = new Complex[wSamp];
-            Complex[] tempFFT = new Complex[wSamp];
-
-            // break up the the entire sound into little part 
-            //when ii=0 we do the first 2480 sample
-
-            for (ii = 0; ii < 2 * Math.Floor((double)N / (double)wSamp) - 1; ii++)
-            {
-
-                for (jj = 0; jj < wSamp; jj++)
-                {
-                    temp[jj] = x[ii * (wSamp / 2) + jj];
-                }
-
-                tempFFT = fft(temp);
-
-                for (kk = 0; kk < wSamp / 2; kk++)
-                {
-                    Y[kk][ii] = (float)Complex.Abs(tempFFT[kk]);
-
-                    if (Y[kk][ii] > fftMax)
-                    {
-                        fftMax = Y[kk][ii];
-                    }
-                }
-
-
-            }
-
-            for (ii = 0; ii < 2 * Math.Floor((double)N / (double)wSamp) - 1; ii++)
-            {
-                for (kk = 0; kk < wSamp / 2; kk++)
-                {
-                    Y[kk][ii] /= fftMax;
-                }
-            }
-
-            return Y;
-        }*/
+            
 
 
 
