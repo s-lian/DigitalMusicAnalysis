@@ -12,6 +12,7 @@ using System.Threading;
 using System.Numerics;
 using NAudio.Wave;
 using System.Xml;
+using System.Threading.Tasks;
 
 namespace DigitalMusicAnalysis
 {
@@ -30,6 +31,9 @@ namespace DigitalMusicAnalysis
         private string filename;
         private enum pitchConv { C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B };
         private double bpm = 70;
+        public int NUM_OF_PROCESSOR = 8;
+
+
 
         public MainWindow()
         {
@@ -42,6 +46,8 @@ namespace DigitalMusicAnalysis
 
             filename = openFile("Select Audio (wav) file");
             string xmlfile = openFile("Select Score (xml) file");
+
+          
             Thread check = new Thread(new ThreadStart(updateSlider));
 
 
@@ -64,9 +70,10 @@ namespace DigitalMusicAnalysis
 
             playBack();
             check.Start();
+
             totaTime.Stop();
 
-            string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark.txt";
+           /* string benchmarkFile = @"C:\Users\steph\OneDrive - Queensland University of Technology\Documents\CAB 401\benchmark3.txt";
             string seconds = $"toalTime in secods: {totaTime.Elapsed.TotalSeconds},freqDomain time in seconds: {freqDomainTime.Elapsed.TotalSeconds},onsetDetectiontime in seconds: {onsetDectionTime.Elapsed.TotalSeconds}\n ";
             string milliseconds = $"toalTime in milliseconds: {totaTime.ElapsedMilliseconds},freqDomain time in milliseconds: {freqDomainTime.ElapsedMilliseconds},onsetDetectiontime in milliseconds: {onsetDectionTime.ElapsedMilliseconds}\n ";
 
@@ -74,7 +81,7 @@ namespace DigitalMusicAnalysis
             {
                 sw.WriteLine(seconds);
                 sw.WriteLine(milliseconds);
-            }
+            }*/
 
             Debug.WriteLine($"total Time: {totaTime.ElapsedMilliseconds} ms \nFreqDomain Time: {freqDomainTime.ElapsedMilliseconds} ms\nonsetDetection Time: {onsetDectionTime.ElapsedMilliseconds} ms");
 
@@ -387,22 +394,26 @@ namespace DigitalMusicAnalysis
 
             ///*
 
+
             for (int ii = 0; ii < noteStops.Count; ii++)
             {
                 lengths.Add(noteStops[ii] - noteStarts[ii]);
             }
 
-            for (int mm = 0; mm < lengths.Count; mm++)
+
+
+            double[] globalPitch = new double[lengths.Count];
+            Parallel.For(0, lengths.Count, new ParallelOptions { MaxDegreeOfParallelism = NUM_OF_PROCESSOR }, mm =>
             {
                 int nearest = (int)Math.Pow(2, Math.Ceiling(Math.Log(lengths[mm], 2)));
-                twiddles = new Complex[nearest];
-                for (ll = 0; ll < nearest; ll++)
+                Complex[] twiddles = new Complex[nearest]; // need to initialise for each Parallel.For loop
+                for (int ll = 0; ll < nearest; ll++)
                 {
                     double a = 2 * pi * ll / (double)nearest;
                     twiddles[ll] = Complex.Pow(Complex.Exp(-i), (float)a);
                 }
 
-                compX = new Complex[nearest];
+                Complex[] compX = new Complex[nearest];
                 for (int kk = 0; kk < nearest; kk++)
                 {
                     if (kk < lengths[mm] && (noteStarts[mm] + kk) < waveIn.wave.Length)
@@ -415,13 +426,14 @@ namespace DigitalMusicAnalysis
                     }
                 }
 
-                Y = new Complex[nearest];
+                Complex[] Y = new Complex[nearest];
 
-                Y = fft(compX, nearest);
+                Y = fft(compX, nearest, twiddles);
 
-                absY = new double[nearest];
+                double[] absY = new double[nearest];
 
                 double maximum = 0;
+
                 int maxInd = 0;
 
                 for (int jj = 0; jj < Y.Length; jj++)
@@ -433,7 +445,6 @@ namespace DigitalMusicAnalysis
                         maxInd = jj;
                     }
                 }
-
                 for (int div = 6; div > 1; div--)
                 {
 
@@ -455,15 +466,17 @@ namespace DigitalMusicAnalysis
 
                 if (maxInd > nearest / 2)
                 {
-                    pitches.Add((nearest - maxInd) * waveIn.SampleRate / nearest);
+                    globalPitch[mm] = (nearest - maxInd) * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
                 }
                 else
                 {
-                    pitches.Add(maxInd * waveIn.SampleRate / nearest);
+                    globalPitch[mm] = maxInd * waveIn.SampleRate / nearest; // these are individual to each thread, will need to add back together later
                 }
+            });
 
+            pitches.AddRange(globalPitch); // add the pitches back together
 
-            }
+           
 
             musicNote[] noteArray;
             noteArray = new musicNote[noteStarts.Count()];
@@ -531,6 +544,7 @@ namespace DigitalMusicAnalysis
 
             for (int ii = 0; ii < alignedNoteArray.Length; ii++)
             {
+
                 //noteArray[ii] = new musicNote(pitches[ii], lengths[ii]);
                 //System.Console.Out.Write("Note " + (ii + 1) + ": \nDuration: " + noteArray[ii].duration / waveIn.SampleRate + " seconds \nPitch: " + Enum.GetName(typeof(musicNote.notePitch), (noteArray[ii].pitch) % 12) + " / " + pitches[ii] + "\nError: " + noteArray[ii].error * 100 + "%\n");
                 notes[ii] = new Ellipse();
@@ -650,8 +664,21 @@ namespace DigitalMusicAnalysis
                 noteStaff.Children.Insert(ii, timeRect[ii]);
             }
 
+            // write the noteArray to a text file to compare with sequential code
 
+
+
+           /* using (TextWriter sw = new StreamWriter(@"C:\Users\steph\Documents\CAB401\DigitalMusicAnalysis\DigitalMusicAnalysis\ParallleOutput.txt")) //records bench mark specs
+            {
+
+                foreach (var line in alignedNoteArray)
+                {
+                    sw.WriteLine(line.Output());
+                }
+
+            }*/
         }
+
 
         private void DisplayStats(object sender, System.Windows.Input.MouseEventArgs e)
         {
@@ -754,11 +781,13 @@ namespace DigitalMusicAnalysis
 
         // FFT function for Pitch Detection
 
-        private Complex[] fft(Complex[] x, int L)
+        private Complex[] fft(Complex[] x, int L, Complex[] twiddles)
         {
             int ii = 0;
             int kk = 0;
             int N = x.Length;
+
+            // mainFFTCalls++;
 
             Complex[] Y = new Complex[N];
 
@@ -787,12 +816,12 @@ namespace DigitalMusicAnalysis
                     }
                 }
 
-                E = fft(even, L);
-                O = fft(odd, L);
+                E = fft(even, L, twiddles);
+                O = fft(odd, L, twiddles);
 
                 for (kk = 0; kk < N; kk++)
                 {
-                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)];
+                    Y[kk] = E[(kk % (N / 2))] + O[(kk % (N / 2))] * twiddles[kk * (L / N)]; // reference to local twiddles array now, since now being ran in parallel
                 }
             }
 
@@ -1016,6 +1045,9 @@ namespace DigitalMusicAnalysis
 
             returnArray[0] = AlignA;
             returnArray[1] = AlignB;
+
+            Debug.WriteLine(" StringArray : " + returnArray + "\n");
+
 
             return returnArray;
 
