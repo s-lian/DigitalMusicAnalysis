@@ -1,5 +1,5 @@
 file1_path = "C:/Users/steph/Documents/CAB401/DigitalMusicAnalysis_Sequential/DigitalMusicAnalysis/sequentialOutput.txt"
-file2_path = "C:/Users/steph/Documents/CAB401/DigitalMusicAnalysis/DigitalMusicAnalysis/ParallleOutput.txt"
+file2_path = "C:/Users/steph/Documents/CAB401/DigitalMusicAnalysis/DigitalMusicAnalysis/.txt"
 
 with open(file1_path, "r") as file1, open(file2_path, "r") as file2:
     lines1 = file1.readlines()
@@ -8,8 +8,7 @@ with open(file1_path, "r") as file1, open(file2_path, "r") as file2:
 lines_match = True
 
 
-
-# Compare line by line
+# Compare line by lin
 for i, (line1, line2) in enumerate(zip(lines1, lines2)):
     if line1 != line2:
         print(f"Difference in line {i + 1}:")
@@ -18,8 +17,5 @@ for i, (line1, line2) in enumerate(zip(lines1, lines2)):
         lines_match = False
 
 
-
 if lines_match:
-    print ("All strings are matched")
-
-    
+    print("All strings are matched")

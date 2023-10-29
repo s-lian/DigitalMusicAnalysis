@@ -90,11 +90,12 @@ namespace DigitalMusicAnalysis
             }
         }
 
-        public String Output()
+        /* Use this to compare outputs 
+         * public String Output()
         {
             String output = pitch.ToString() + ", " + duration.ToString() + ", " + flat.ToString() + ", " + error.ToString() + ", " + staffPos.ToString() + ", " + mult.ToString() + ", " + frequency.ToString();
             return output;
-        }
+        }*/
     }
 
     

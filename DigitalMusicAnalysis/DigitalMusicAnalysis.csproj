@@ -8,7 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FFTW.NET" Version="1.0.1" />
     <PackageReference Include="NAudio" Version="1.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\steph\Documents\CAB401\DigitalMusicAnalysis\DigitalMusicAnalysis\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\steph\Documents\CAB401\DigitalMusicAnalysis\DigitalMusicAnalysis\.editorconfig" />
   </ItemGroup>
 
 </Project>
